@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = "nginx:latest"
+        DOCKER_CONTAINER_NAME = "test-container"
+        DOCKER_PORT = "9889:80"
+        GITHUB_URL = "https://github.com/erazdobarov65/sf_practice/blob/master/index.html"
+    }
+
+    stages {
+        stage('Fetch index.html') {
+            steps {
+                sh 'curl -o index.html $GITHUB_URL'
+            }
+        }
+
+        stage('Calculate MD5 sum') {
+            steps {
+                script {
+                    def md5sum = sh(returnStdout: true, script: 'md5sum index.html | awk \'{print $1}\'').trim()
+                    env.MD5SUM = md5sum
+                }
+            }
+        }
+
+        stage('Run docker container') {
+            steps {
+                sh "docker run -d -p $DOCKER_PORT --name $DOCKER_CONTAINER_NAME $DOCKER_IMAGE"
+            }
+        }
+
+        stage('Copy index.html to container') {
+            steps {
+                sh "docker cp index.html $DOCKER_CONTAINER_NAME:/usr/share/nginx/html/"
+            }
+        }
+
+        stage('Check container return code') {
+            steps {
+                sh 'curl -s -o /dev/null -w "%{http_code}" http://localhost:9889/index.html > /tmp/status'
+                script {
+                    def status = sh(returnStdout: true, script: 'cat /tmp/status').trim()
+                    if (status != '200') {
+                        error("Container returned status code ${status}")
+              }
+            }
+          }
+        }
+
+        stage('Check MD5 sum') {
+            steps {
+                script {
+                    def result = sh(returnStdout: true, script: "docker exec -i $DOCKER_CONTAINER_NAME md5sum /usr/share/nginx/html/index.html | awk '{print \$1}'").trim()
+                    if (result == env.MD5SUM) {
+                        echo "MD5 sum matched"
+                    } else {
+                        error "MD5 sum did not match"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                telegramSend message: "Pipeline failed for ${currentBuild.fullDisplayName} with result ${currentBuild.result}"
+            }
+        }
+
+        always {
+            sh "docker stop $DOCKER_CONTAINER_NAME && docker rm $DOCKER_CONTAINER_NAME"
+        }
+    }
+
+    triggers {
+        pollSCM("H/5 * * * *")
+    }
+}

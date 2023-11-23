@@ -1,0 +1,96 @@
+evgeny@master:~/socks$ docker stack deploy -c docker-compose.yml socks
+Ignoring unsupported options: restart
+
+Creating network socks_default
+Creating service socks_carts-db
+Creating service socks_payment
+Creating service socks_edge-router
+Creating service socks_catalogue
+Creating service socks_carts
+Creating service socks_orders
+Creating service socks_user-sim
+Creating service socks_rabbitmq
+Creating service socks_shipping
+Creating service socks_user-db
+Creating service socks_queue-master
+Creating service socks_front-end
+Creating service socks_user
+Creating service socks_orders-db
+Creating service socks_catalogue-db
+evgeny@master:~/socks$ docker service ls
+ID             NAME                 MODE         REPLICAS   IMAGE                                PORTS
+qklwb956xqdu   socks_carts          replicated   0/1        weaveworksdemos/carts:0.4.8          
+hqmatkrq90ww   socks_carts-db       replicated   0/1        mongo:3.4                            
+ikd7f2nqx4pb   socks_catalogue      replicated   1/1        weaveworksdemos/catalogue:0.3.5      
+tbyw9rnwm309   socks_catalogue-db   replicated   1/1        weaveworksdemos/catalogue-db:0.3.0   
+typy18n45gcg   socks_edge-router    replicated   1/1        weaveworksdemos/edge-router:0.1.1    *:80->80/tcp, *:8080->8080/tcp
+jrly217gcmqa   socks_front-end      replicated   1/1        weaveworksdemos/front-end:0.3.12     
+qwtoj4sw4jcc   socks_orders         replicated   1/1        weaveworksdemos/orders:0.4.7         
+wz2e9gp06wa2   socks_orders-db      replicated   1/1        mongo:3.4                            
+y5t2u31pnsc4   socks_payment        replicated   1/1        weaveworksdemos/payment:0.4.3        
+jbwh8xx4b8w3   socks_queue-master   replicated   0/1        weaveworksdemos/queue-master:0.3.1   
+th4bmv5fap3z   socks_rabbitmq       replicated   1/1        rabbitmq:3.6.8                       
+prjzjdyah02j   socks_shipping       replicated   1/1        weaveworksdemos/shipping:0.4.8       
+2kk9tws6a3e9   socks_user           replicated   1/1        weaveworksdemos/user:0.4.4           
+ymbqggbrhccy   socks_user-db        replicated   0/1        weaveworksdemos/user-db:0.4.0        
+wcai1n946s0j   socks_user-sim       replicated   1/1        weaveworksdemos/load-test:0.1.1      
+evgeny@master:~/socks$ docker node ls
+ID                            HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+tldmu0oeruoucxjolsa8zlcdi *   master     Ready     Active         Leader           24.0.7
+i1p49emovr3cmg29kexwz0d1s     worker1    Ready     Active                          24.0.7
+7e3yc3oi26e9wr7yp7mct1cx9     worker2    Ready     Active                          24.0.7
+evgeny@master:~/socks$ docker service scale my_stack_front-end=2
+^C
+evgeny@master:~/socks$ #docker service scale socks_front-end=2
+evgeny@master:~/socks$ docker service scale socks_front-end=2
+socks_front-end scaled to 2
+overall progress: 2 out of 2 tasks 
+1/2: running   [==================================================>] 
+2/2: running   [==================================================>] 
+verify: Service converged 
+evgeny@master:~/socks$ docker service ls
+ID             NAME                 MODE         REPLICAS   IMAGE                                PORTS
+qklwb956xqdu   socks_carts          replicated   1/1        weaveworksdemos/carts:0.4.8          
+hqmatkrq90ww   socks_carts-db       replicated   0/1        mongo:3.4                            
+ikd7f2nqx4pb   socks_catalogue      replicated   1/1        weaveworksdemos/catalogue:0.3.5      
+tbyw9rnwm309   socks_catalogue-db   replicated   1/1        weaveworksdemos/catalogue-db:0.3.0   
+typy18n45gcg   socks_edge-router    replicated   1/1        weaveworksdemos/edge-router:0.1.1    *:80->80/tcp, *:8080->8080/tcp
+jrly217gcmqa   socks_front-end      replicated   2/2        weaveworksdemos/front-end:0.3.12     
+qwtoj4sw4jcc   socks_orders         replicated   1/1        weaveworksdemos/orders:0.4.7         
+wz2e9gp06wa2   socks_orders-db      replicated   0/1        mongo:3.4                            
+y5t2u31pnsc4   socks_payment        replicated   1/1        weaveworksdemos/payment:0.4.3        
+jbwh8xx4b8w3   socks_queue-master   replicated   1/1        weaveworksdemos/queue-master:0.3.1   
+th4bmv5fap3z   socks_rabbitmq       replicated   1/1        rabbitmq:3.6.8                       
+prjzjdyah02j   socks_shipping       replicated   1/1        weaveworksdemos/shipping:0.4.8       
+2kk9tws6a3e9   socks_user           replicated   1/1        weaveworksdemos/user:0.4.4           
+ymbqggbrhccy   socks_user-db        replicated   1/1        weaveworksdemos/user-db:0.4.0        
+wcai1n946s0j   socks_user-sim       replicated   1/1        weaveworksdemos/load-test:0.1.1      
+evgeny@master:~/socks$ docker node ls
+ID                            HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+tldmu0oeruoucxjolsa8zlcdi *   master     Ready     Active         Leader           24.0.7
+i1p49emovr3cmg29kexwz0d1s     worker1    Ready     Active                          24.0.7
+7e3yc3oi26e9wr7yp7mct1cx9     worker2    Ready     Active                          24.0.7
+evgeny@master:~/socks$ docker service ice 
+
+Usage:  docker service COMMAND
+
+Manage Swarm services
+
+Commands:
+  create      Create a new service
+  inspect     Display detailed information on one or more services
+  logs        Fetch the logs of a service or task
+  ls          List services
+  ps          List the tasks of one or more services
+  rm          Remove one or more services
+  rollback    Revert changes to a service's configuration
+  scale       Scale one or multiple replicated services
+  update      Update a service
+
+Run 'docker service COMMAND --help' for more information on a command.
+evgeny@master:~/socks$ 
+evgeny@master:~/socks$ 
+evgeny@master:~/socks$ docker service ps socks_front-end
+ID             NAME                IMAGE                              NODE      DESIRED STATE   CURRENT STATE           ERROR     PORTS
+p376lw1qpjt8   socks_front-end.1   weaveworksdemos/front-end:0.3.12   worker2   Running         Running 8 minutes ago             
+rto5zfkb611v   socks_front-end.2   weaveworksdemos/front-end:0.3.12   master    Running         Running 3 minutes ago            

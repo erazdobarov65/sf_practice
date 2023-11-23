@@ -1,0 +1,233 @@
+To modify your docker-compose.yml file to make it compatible with Docker Swarm, you'll need to make a few adjustments. Docker Swarm introduces some additional concepts and features compared to standalone Docker Compose. Here are some modifications you can make:
+
+Change Version to '3': Use version '3' for Docker Swarm compatibility.
+
+Remove 'hostname' and 'restart' for Each Service: Docker Swarm uses its own internal DNS for service discovery, and the restart policy is managed at the service level in Swarm.
+
+**Update 'ports' to 'deployfor Each Service**: Ports are now defined under thedeploy` section.
+
+Add 'deploy' Section for Each Service: This is where you define Swarm-specific configurations like replicas, placement constraints, and update policies.
+
+Here's a modified version of your docker-compose.yml:
+
+version: '3'
+
+services:
+  front-end:
+    image: weaveworksdemos/front-end:0.3.12
+    cap_drop:
+      - all
+    read_only: true
+
+  edge-router:
+    image: weaveworksdemos/edge-router:0.1.1
+    ports:
+      - '80:80'
+      - '8080:8080'
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    read_only: true
+    tmpfs:
+      - /var/run:rw,noexec,nosuid
+
+  catalogue:
+    image: weaveworksdemos/catalogue:0.3.5
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+
+  catalogue-db:
+    image: weaveworksdemos/catalogue-db:0.3.0
+    hostname: catalogue-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+      - MYSQL_DATABASE=socksdb
+
+  carts:
+    image: weaveworksdemos/carts:0.4.8
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+    environment:
+      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+
+  carts-db:
+    image: mongo:3.4
+    hostname: carts-db
+    restart: always
+    cap_drop:
+      - all
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+
+  orders:
+    image: weaveworksdemos/orders:0.4.7
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+    environment:
+      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+
+  orders-db:
+    image: mongo:3.4
+    hostname: orders-db
+    restart: always
+    cap_drop:
+      - all
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+
+  shipping:
+    image: weaveworksdemos/shipping:0.4.8
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+    environment:
+      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+
+  queue-master:
+    image: weaveworksdemos/queue-master:0.3.1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+
+  rabbitmq:
+    image: rabbitmq:3.6.8
+    hostname: rabbitmq
+    restart: always
+    cap_drop:
+      - all
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    read_only: true
+
+  payment:
+    image: weaveworksdemos/payment:0.4.3
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+
+  user:
+    image: weaveworksdemos/user:0.4.4
+    cap_drop:
+      - all
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    environment:
+      - MONGO_HOST=user-db:27017
+
+  user-db:
+    image: weaveworksdemos/user-db:0.4.0
+    hostname: user-db
+    restart: always
+    cap_drop:
+      - all
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+
+  user-sim:
+    image: weaveworksdemos/load-test:0.1.1
+    cap_drop:
+      - all
+    read_only: true
+    hostname: user-simulator
+    command: "-d 60 -r 200 -c 2 -h edge-router"
+
+# Swarm-specific configurations for each service
+deploy:
+  replicas: 3  # Adjust the number of replicas as needed
+  placement:
+    constraints:
+      - node.role == worker
+
+
+In this example, I've added a basic deploy section for each service, specifying the number of replicas and a constraint to deploy services only on worker nodes. Adjust the replicas and constraints based on your Swarm setup.
+
+Please customize this according to your specific needs and your Swarm cluster configuration.
+
+
+Deploy Your Stack:
+Ensure that your Docker Swarm cluster is initialized, and you have deployed your stack using the docker stack deploy command with your docker-compose.yml file.
+
+bash
+Copy code
+docker stack deploy -c docker-compose.yml <stack_name>
+Replace <stack_name> with the desired name for your stack.
+
+Scale the Service:
+To scale the front-end service to run on multiple nodes, use the following command:
+
+bash
+Copy code
+docker service scale <stack_name>_front-end=<desired_replica_count>
+Replace <stack_name> with your stack name and <desired_replica_count> with the number of replicas you want. This will create additional instances of the front-end service on different nodes in the Swarm cluster.
+
+For example, to scale to 2 replicas:
+
+bash
+Copy code
+docker service scale my_stack_front-end=2
+Verify Scaling:
+You can use the following command to check the current status of your service and verify that it's running on multiple nodes:
+
+bash
+Copy code
+docker service ps <stack_name>_front-end
+This command will display the tasks (containers) of the front-end service and the nodes they are running on.
+
+Keep in mind that the ability to scale services across nodes in a Swarm cluster depends on the distribution of tasks among available nodes, and the constraints you've specified in your docker-compose.yml file or during service creation. Also, ensure that your Swarm nodes have sufficient resources to accommodate the desired number of replicas.
+
+
+
+
+
+

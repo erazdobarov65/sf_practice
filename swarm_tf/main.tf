@@ -8,9 +8,9 @@ terraform {
 }
 
 provider "yandex" {
-  token     = "t1.9euelZqMy47LmMmVi8aal8mTnZCUk-3rnpWaz8iem47Hmc6dz5OOnZbHy4vl9PdBDWpU-e9kcWqo3fT3ATxnVPnvZHFqqM3n9euelZqMk5GVj8nGkZ2clc7Pj5XNnu_8zef1656VmsuQx5icy5mKno2ei8fGm5rJ7_3F656VmoyTkZWPycaRnZyVzs-Plc2e.FgquZ2lOL1oZVTmudOX0Ot3wSWYt0pugt-iDgX70h0R9Vfg-qLdbdc3uMnm_2hgdewPmVMnIw_fUMPzdXYXyCQ"
-  cloud_id  = "b1gm19nmjb0pa1kch69i"
-  folder_id = "b1gtv6t2104oglbvpco8"
+  token     = ""
+  cloud_id  = ""
+  folder_id = ""
   zone      = "ru-central1-a"
 }
 
